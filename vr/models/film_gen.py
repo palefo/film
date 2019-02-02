@@ -153,8 +153,8 @@ class FiLMGen(nn.Module):
     return output_shaped, (ht, ct)
 
   def forward(self, x):
-    if self.debug_every <= -2:
-      pdb.set_trace()
+    #if self.debug_every <= -2:
+      #pdb.set_trace()
     encoded = self.encoder(x)
     film_pre_mod, _ = self.decoder(encoded, self.get_dims(x=x))
     film = self.modify_output(film_pre_mod, gamma_option=self.gamma_option,
