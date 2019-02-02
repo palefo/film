@@ -4,6 +4,9 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+#Modified by Pablo Fonseca to be compatible with PyTorch 1.0
+#TODO Remove dependence on scipy.misc.imread, imresize 
+
 import argparse, os, json
 import h5py
 import numpy as np
@@ -13,6 +16,7 @@ from tqdm import tqdm
 import torch
 import torchvision
 
+device = torch.device("cuda")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--input_image_dir', required=True)
@@ -44,9 +48,8 @@ def build_model(args):
   for i in range(args.model_stage):
     name = 'layer%d' % (i + 1)
     layers.append(getattr(cnn, name))
-  model = torch.nn.Sequential(*layers)
-  model.cuda()
-  model.eval()
+  model = torch.nn.Sequential(*layers).to(device)
+
   return model
 
 
@@ -60,13 +63,14 @@ def run_batch(cur_batch, model):
 
   image_batch = np.concatenate(cur_batch, 0).astype(np.float32)
   image_batch = (image_batch / 255.0 - mean) / std
-  image_batch = torch.FloatTensor(image_batch).cuda()
-  image_batch = torch.autograd.Variable(image_batch, volatile=True)
+  image_batch = torch.FloatTensor(image_batch).to(device) #.cuda()
 
-  feats = model(image_batch)
-  feats = feats.data.cpu().clone().numpy()
 
-  return feats
+
+  with torch.no_grad():
+    feats = model(image_batch)
+    feats = feats.data.cpu().clone().numpy()
+    return feats
 
 
 def main(args):
